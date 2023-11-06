@@ -1,0 +1,19 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.PolestarShare" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:statusBarColor" tools:targetApi="l">@color/orange</item>
+    </style>
+
+    <style name="Theme.PolestarShare" parent="Base.Theme.PolestarShare" />
+
+    <style name="FloatingActionButton" parent="Widget.Design.FloatingActionButton">
+        <item name="cornerSize">50dp</item>
+        <item name="iconSize" > 30dp</item>
+    </style>
+
+    <style name="FloatingActionButton2" parent="Widget.Design.FloatingActionButton">
+        <item name="cornerSize">16dp</item>
+    </style>
+</resources>
