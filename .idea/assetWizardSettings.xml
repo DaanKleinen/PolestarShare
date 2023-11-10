@@ -67,7 +67,9 @@
                                           <PersistentState>
                                             <option name="values">
                                               <map>
+                                                <entry key="color" value="000000" />
                                                 <entry key="imagePath" value="C:\Users\daank\AppData\Local\Temp\ic_android_black_24dp.xml" />
+                                                <entry key="trimmed" value="true" />
                                               </map>
                                             </option>
                                           </PersistentState>
@@ -79,7 +81,8 @@
                                             <option name="values">
                                               <map>
                                                 <entry key="color" value="000000" />
-                                                <entry key="imagePath" value="C:\Users\daank\OneDrive\Bureaublad\Semester7\Images\polestar1.png" />
+                                                <entry key="imagePath" value="C:\Users\daank\OneDrive\Bureaublad\Semester7\Images\Group 119.jpg" />
+                                                <entry key="scalingPercent" value="106" />
                                                 <entry key="trimmed" value="true" />
                                               </map>
                                             </option>
@@ -112,9 +115,8 @@
                                   </option>
                                   <option name="values">
                                     <map>
-                                      <entry key="generatePlayStoreIcon" value="false" />
-                                      <entry key="generateWebpIcons" value="false" />
-                                      <entry key="outputName" value="polestar1" />
+                                      <entry key="backgroundAssetType" value="COLOR" />
+                                      <entry key="backgroundColor" value="081822" />
                                     </map>
                                   </option>
                                 </PersistentState>

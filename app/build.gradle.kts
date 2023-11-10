@@ -9,11 +9,11 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.polestarshare"
+        applicationId = "com.daank.polestarshare"
         minSdk = 29
         targetSdk = 33
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.02"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -76,4 +76,8 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("androidx.car.app:app:1.0.0-beta01")
+    implementation("com.mapbox.navigation:ui-androidauto:0.22.0")
+    implementation("com.mapbox.navigation:ui-dropin:2.17.0-rc.1")
+
 }

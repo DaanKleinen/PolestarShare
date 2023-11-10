@@ -165,6 +165,10 @@ class MapFragment : Fragment()  {
                     dialog.setCancelable(true)
                     dialog.setContentView(view)
                     dialog.show()
+                    mapView.camera.flyTo(cameraOptions {
+                        center(Point.fromLngLat(5.452850,51.450340))
+                        zoom(17.0)
+                    })
                     false
 
                 }

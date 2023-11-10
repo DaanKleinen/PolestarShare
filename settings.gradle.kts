@@ -36,4 +36,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "Polestar Share"
 include(":app")
-include(":polestarshareaa")
