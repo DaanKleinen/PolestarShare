@@ -16,17 +16,13 @@
         android:label="fragment_profile"
         tools:layout="@layout/fragment_profile" />
     <fragment
-        android:id="@+id/settingsFragment"
-        android:name="com.example.polestarshare.SettingsFragment"
-        android:label="fragment_settings"
-        tools:layout="@layout/fragment_settings" />
-    <fragment
         android:id="@+id/mapsFragment"
         android:name="com.example.polestarshare.MapFragment"
         android:label="fragment_maps"
         tools:layout="@layout/fragment_map" />
-    <activity
-        android:id="@+id/mapActivity"
-        android:name="com.example.polestarshare.MapActivity"
-        android:label="MapActivity" />
+    <fragment
+        android:id="@+id/listFragment"
+        android:name="com.example.polestarshare.list"
+        android:label="fragment_list"
+        tools:layout="@layout/fragment_list" />
 </navigation>

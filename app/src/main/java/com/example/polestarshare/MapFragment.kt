@@ -2,6 +2,8 @@ package com.example.polestarshare
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Dialog
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -9,10 +11,13 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.location.Location
 import android.os.Bundle
-import android.os.Handler
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
@@ -23,20 +28,23 @@ import androidx.fragment.app.Fragment
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.mapbox.geojson.Point
 import com.mapbox.maps.MapView
 import com.mapbox.maps.Style
 import com.mapbox.maps.dsl.cameraOptions
-import com.mapbox.maps.extension.observable.eventdata.CameraChangedEventData
 import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationClickListener
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
-import com.mapbox.maps.plugin.delegates.listeners.OnCameraChangeListener
 import com.mapbox.maps.plugin.locationcomponent.location
-import kotlinx.coroutines.delay
+import kotlin.math.asin
+import kotlin.math.cos
+import kotlin.math.sqrt
 
 
 class MapFragment : Fragment()  {
@@ -47,6 +55,12 @@ class MapFragment : Fragment()  {
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     var LAT: Double = 51.450340
     var LON: Double = 5.452850
+    val db = Firebase.firestore
+
+
+
+
+
 
     val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -76,6 +90,7 @@ class MapFragment : Fragment()  {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+
         locationPermissionRequest.launch(arrayOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION))
@@ -96,8 +111,26 @@ class MapFragment : Fragment()  {
                         pulsingEnabled = true
 
                     }
+                    db.collection("Markers")
+                        .get()
+                        .addOnSuccessListener { result ->
+                            val context = context ?: return@addOnSuccessListener
+                            if(context != null){
 
-                    addAnnotationToMap()
+
+                            for (document in result) {
+                                addAnnotationToMap(
+                                    document.data.get("lat").toString().toDouble(),
+                                    document.data.get("lon").toString().toDouble(),
+                                    document.data.get("carModel").toString(),
+                                    document.data.get("battery").toString(),
+                                    )
+                            }
+                            }
+                        }
+                        .addOnFailureListener { exception ->
+                            Toast.makeText(requireContext(), "something went wrong fetching the annotaions", Toast.LENGTH_SHORT).show()
+                        }
                 }
             }
         )
@@ -148,7 +181,7 @@ class MapFragment : Fragment()  {
     }
 
 
-    private fun addAnnotationToMap() {
+    private fun addAnnotationToMap(lat: Double, lon: Double, carModelNumber : String, battery: String) {
         bitmapFromDrawableRes(
             requireContext(),
             R.drawable.marker
@@ -156,19 +189,58 @@ class MapFragment : Fragment()  {
             val annotationApi = mapView?.annotations
             val pointAnnotationManager = annotationApi?.createPointAnnotationManager(mapView!!)
             val pointAnnotationOptions: PointAnnotationOptions = PointAnnotationOptions()
-                .withPoint(Point.fromLngLat(5.452850, 51.450340))
+                .withPoint(Point.fromLngLat(lon, lat))
                 .withIconImage(it)
             pointAnnotationManager?.apply { addClickListener(
                 OnPointAnnotationClickListener {
                     val dialog = BottomSheetDialog(requireContext())
                     val view = layoutInflater.inflate(R.layout.reserve_car_bottom_sheet, null)
-                    dialog.setCancelable(true)
-                    dialog.setContentView(view)
-                    dialog.show()
+                    val carModelText = view.findViewById<TextView>(R.id.carModelText)
+                    carModelText.text = "Polestar ${carModelNumber}"
+                    val carModelImg = view.findViewById<ImageView>(R.id.carModelImg)
+                    if(carModelNumber.equals("1")){
+                        carModelImg.setImageResource(R.drawable.polestar1)
+                    }
+                    else if (carModelNumber.equals("2")){
+                        carModelImg.setImageResource(R.drawable.polestar2)
+                    }
+                    else{
+                        carModelImg.setImageResource(R.drawable.polestar3)
+                    }
+                    val batteryText = view.findViewById<TextView>(R.id.battery)
+                    batteryText.text = "${battery}%"
+                    val batteryRange = view.findViewById<TextView>(R.id.batteryRange)
+                    val range : Double = 635 * (battery.toDouble() / 100)
+                    batteryRange.text = "${range.toInt().toString()} km"
+                    openBottomsheet(dialog,view)
                     mapView.camera.flyTo(cameraOptions {
-                        center(Point.fromLngLat(5.452850,51.450340))
+                        center(Point.fromLngLat(lon, lat))
                         zoom(17.0)
                     })
+
+                    val priceScreen = layoutInflater.inflate(R.layout.reserve_car_price_bottom_sheet, null)
+                    val priceButton = view.findViewById<MaterialButton>(R.id.priceButton)
+                    priceButton.setOnClickListener{
+                        changeBottomSheet(dialog,priceScreen)
+                    }
+                    val priceBackButton = priceScreen.findViewById<ImageView>(R.id.priceBack)
+                    priceBackButton.setOnClickListener{
+                        changeBottomSheet(dialog,view)
+                        dialog.setCancelable(true)
+                    }
+                    val routeScreen = layoutInflater.inflate(R.layout.reserve_car_plan_route_bottom_sheet, null)
+                    val routeButton = view.findViewById<MaterialButton>(R.id.routeButton)
+                    routeButton.setOnClickListener{
+                        changeBottomSheet(dialog,routeScreen)
+                    }
+
+                    val routeBackButton = routeScreen.findViewById<ImageView>(R.id.routeBack)
+                    routeBackButton.setOnClickListener{
+                        changeBottomSheet(dialog,view)
+                        dialog.setCancelable(true)
+                    }
+
+
                     false
 
                 }
@@ -178,6 +250,17 @@ class MapFragment : Fragment()  {
         }
     }
 
+
+    private fun openBottomsheet(dialog:Dialog, view: View){
+        dialog.setCancelable(true)
+        dialog.setContentView(view)
+        dialog.show()
+    }
+
+    private fun changeBottomSheet(dialog:Dialog, view:View){
+        dialog.setCancelable(false)
+        dialog.setContentView(view)
+    }
 
 
 
@@ -224,6 +307,9 @@ class MapFragment : Fragment()  {
             }
         }
     }
+
+
+
 
 
     override fun onStart() {

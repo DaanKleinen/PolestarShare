@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -12,8 +13,8 @@ android {
         applicationId = "com.daank.polestarshare"
         minSdk = 29
         targetSdk = 33
-        versionCode = 3
-        versionName = "1.02"
+        versionCode = 7
+        versionName = "1.06"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -66,6 +67,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("com.google.firebase:firebase-firestore:24.9.1")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
@@ -78,6 +80,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("androidx.car.app:app:1.0.0-beta01")
     implementation("com.mapbox.navigation:ui-androidauto:0.22.0")
-    implementation("com.mapbox.navigation:ui-dropin:2.17.0-rc.1")
+    implementation("com.mapbox.navigation:ui-dropin:2.17.4")
+    implementation ("com.mapbox.navigation:android:2.17.4")
 
 }

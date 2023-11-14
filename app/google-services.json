@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "443237221264",
+    "project_id": "polestarshare",
+    "storage_bucket": "polestarshare.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:443237221264:android:a428d6ebe4ba48a2e26915",
+        "android_client_info": {
+          "package_name": "com.daank.polestarshare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQNljDOCoeFWouViJaz65lsrDEU8NXfXE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

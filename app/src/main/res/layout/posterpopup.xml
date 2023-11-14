@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"
+        >
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Tot op heden is de huidige versie van deze app beperkt tot de kaartfunctionaliteit tot aan het reserveringspunt. Deze kaart is ook bruikbaar op Android Auto, zij het zonder de functionaliteit voor het ophalen van gebruikerslocaties. Verdere functies zullen beschikbaar worden gesteld in toekomstige updates."
+            />
+
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/closeButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/orange"
+            app:cornerRadius="5dp"
+            android:layout_marginTop="20dp"
+            android:text="Start de app!"
+            android:textColor="@color/white"
+            />
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

@@ -58,7 +58,6 @@ class MainCarSession : Session() {
         lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onCreate(owner: LifecycleOwner) {
                 checkLocationPermissions()
-                observeAutoDrive()
             }
         })
     }
@@ -105,21 +104,5 @@ class MainCarSession : Session() {
     // Enable auto drive. Open the app on the head unit and then execute the following from your
     // computer terminal.
     // adb shell dumpsys activity service com.mapbox.navigation.examples.androidauto.car.MainCarAppService AUTO_DRIVE
-    private fun observeAutoDrive() {
-        lifecycleScope.launch {
-            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                mapboxCarContext.mapboxNavigationManager.autoDriveEnabledFlow.collect {
-                    refreshTripSession()
-                }
-            }
-        }
-    }
 
-    @SuppressLint("MissingPermission")
-    private fun refreshTripSession() {
-        if (!PermissionsManager.areLocationPermissionsGranted(carContext)) {
-            mapboxNavigation.stopTripSession()
-            return
-        }
-    }
 }
