@@ -3,19 +3,17 @@ package com.example.polestarshare
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Dialog
-import android.content.ContentValues.TAG
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.location.Location
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.Window
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -42,9 +40,6 @@ import com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationClickListene
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
 import com.mapbox.maps.plugin.locationcomponent.location
-import kotlin.math.asin
-import kotlin.math.cos
-import kotlin.math.sqrt
 
 
 class MapFragment : Fragment()  {
@@ -217,6 +212,16 @@ class MapFragment : Fragment()  {
                         center(Point.fromLngLat(lon, lat))
                         zoom(17.0)
                     })
+
+                    val reserveer = view.findViewById<MaterialButton>(R.id.reserveer)
+                    reserveer.setOnClickListener{
+                        val intent = Intent(requireContext(), Navigation::class.java)
+                        val b = Bundle()
+                        b.putDouble("LAT", lat)
+                        b.putDouble("LON", lon)
+                        intent.putExtras(b);
+                        startActivity(intent)
+                    }
 
                     val priceScreen = layoutInflater.inflate(R.layout.reserve_car_price_bottom_sheet, null)
                     val priceButton = view.findViewById<MaterialButton>(R.id.priceButton)

@@ -40,6 +40,7 @@ android {
     }
     buildFeatures {
         compose = true
+        viewBinding = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.3"
@@ -82,5 +83,6 @@ dependencies {
     implementation("com.mapbox.navigation:ui-androidauto:0.22.0")
     implementation("com.mapbox.navigation:ui-dropin:2.17.4")
     implementation ("com.mapbox.navigation:android:2.17.4")
+    implementation ("com.android.databinding:viewbinding:4.0.1")
 
 }
