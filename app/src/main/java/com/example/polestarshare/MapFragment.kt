@@ -11,9 +11,13 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.location.Location
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -22,7 +26,9 @@ import androidx.annotation.DrawableRes
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -31,6 +37,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.mapbox.geojson.Point
+import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.Style
 import com.mapbox.maps.dsl.cameraOptions
@@ -40,6 +47,16 @@ import com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationClickListene
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
 import com.mapbox.maps.plugin.locationcomponent.location
+import com.mapbox.search.autocomplete.PlaceAutocomplete
+import com.mapbox.search.autofill.AddressAutofill
+import com.mapbox.search.autofill.AddressAutofillOptions
+import com.mapbox.search.autofill.AddressAutofillResult
+import com.mapbox.search.autofill.AddressAutofillSuggestion
+import com.mapbox.search.autofill.Query
+import com.mapbox.search.ui.adapter.autofill.AddressAutofillUiAdapter
+import com.mapbox.search.ui.view.CommonSearchViewConfiguration
+import com.mapbox.search.ui.view.DistanceUnitType
+import com.mapbox.search.ui.view.SearchResultsView
 
 
 class MapFragment : Fragment()  {
@@ -53,7 +70,15 @@ class MapFragment : Fragment()  {
     val db = Firebase.firestore
 
 
+    private lateinit var addressAutofill: AddressAutofill
 
+    private lateinit var searchResultsView: SearchResultsView
+    private lateinit var addressAutofillUiAdapter: AddressAutofillUiAdapter
+
+    private lateinit var queryEditText: EditText
+
+    private var ignoreNextMapIdleEvent: Boolean = false
+    private var ignoreNextQueryTextUpdate: Boolean = false
 
 
 
@@ -85,6 +110,69 @@ class MapFragment : Fragment()  {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        val view = inflater.inflate(R.layout.fragment_map, container, false)
+        addressAutofill = AddressAutofill.create(getString(R.string.mapbox_access_token))
+
+        queryEditText = view.findViewById(R.id.query_text)
+
+        searchResultsView = view.findViewById(R.id.search_results_view)
+
+        searchResultsView.initialize(
+            SearchResultsView.Configuration(
+                commonConfiguration = CommonSearchViewConfiguration(DistanceUnitType.METRIC)
+            )
+        )
+
+        addressAutofillUiAdapter = AddressAutofillUiAdapter(
+            view = searchResultsView,
+            addressAutofill = addressAutofill
+        )
+
+        addressAutofillUiAdapter.addSearchListener(object :
+            AddressAutofillUiAdapter.SearchListener {
+
+            override fun onSuggestionSelected(suggestion: AddressAutofillSuggestion) {
+                selectSuggestion(
+                    suggestion,
+                    fromReverseGeocoding = false,
+                )
+            }
+
+            override fun onSuggestionsShown(suggestions: List<AddressAutofillSuggestion>) {
+// Nothing to do
+            }
+
+            override fun onError(e: Exception) {
+// Nothing to do
+            }
+        })
+
+        queryEditText.addTextChangedListener(object : TextWatcher {
+
+            override fun onTextChanged(text: CharSequence, start: Int, before: Int, count: Int) {
+                if (ignoreNextQueryTextUpdate) {
+                    ignoreNextQueryTextUpdate = false
+                    return
+                }
+
+                val query = Query.create(text.toString())
+                if (query != null) {
+                    lifecycleScope.launchWhenStarted {
+                        addressAutofillUiAdapter.search(query)
+                    }
+                }
+                searchResultsView.isVisible = query != null
+            }
+
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+// Nothing to do
+            }
+
+            override fun afterTextChanged(s: Editable) {
+// Nothing to do
+            }
+        })
+
 
         locationPermissionRequest.launch(arrayOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -94,7 +182,7 @@ class MapFragment : Fragment()  {
         fusedLocationProviderClient = LocationServices
             .getFusedLocationProviderClient(requireActivity());
 
-        val view = inflater.inflate(R.layout.fragment_map, container, false)
+
         mapView = view.findViewById(R.id.mapView)
         mapView?.getMapboxMap()?.loadStyleUri(
             Style.MAPBOX_STREETS,
@@ -313,6 +401,59 @@ class MapFragment : Fragment()  {
         }
     }
 
+    private fun findAddress(point: Point) {
+        lifecycleScope.launchWhenStarted {
+            val response = addressAutofill.suggestions(point, AddressAutofillOptions())
+            response.onValue { suggestions ->
+                if (suggestions.isEmpty()) {
+                    Log.d("TAG", "address_autofill_error_pin_correction")
+                } else {
+                    selectSuggestion(
+                        suggestions.first(),
+                        fromReverseGeocoding = true
+                    )
+                }
+            }.onError {
+                Log.d("TAG", "address_autofill_error_pin_correction")
+            }
+        }
+    }
+
+    private fun selectSuggestion(suggestion: AddressAutofillSuggestion, fromReverseGeocoding: Boolean) {
+        lifecycleScope.launchWhenStarted {
+            val response = addressAutofill.select(suggestion)
+            response.onValue { result ->
+                showAddressAutofillResult(result, fromReverseGeocoding)
+            }.onError {
+                Log.d("TAG", "address_autofill_error_select")
+            }
+        }
+    }
+
+    private fun showAddressAutofillResult(result: AddressAutofillResult, fromReverseGeocoding: Boolean) {
+        val address = result.address
+
+        if (!fromReverseGeocoding) {
+            mapView.getMapboxMap().setCamera(
+                CameraOptions.Builder()
+                    .center(result.suggestion.coordinate)
+                    .zoom(16.0)
+                    .build()
+            )
+            ignoreNextMapIdleEvent = true
+        }
+
+        ignoreNextQueryTextUpdate = true
+        queryEditText.setText(
+            listOfNotNull(
+                address.houseNumber,
+                address.street
+            ).joinToString()
+        )
+        queryEditText.clearFocus()
+
+        searchResultsView.isVisible = false
+    }
 
 
 

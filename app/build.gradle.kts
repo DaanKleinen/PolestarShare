@@ -84,5 +84,9 @@ dependencies {
     implementation("com.mapbox.navigation:ui-dropin:2.17.4")
     implementation ("com.mapbox.navigation:android:2.17.4")
     implementation ("com.android.databinding:viewbinding:4.0.1")
+    implementation ("com.mapbox.search:autofill:1.0.0-rc.6")
+    implementation ("com.mapbox.search:place-autocomplete:1.0.0-rc.6")
+    implementation ("com.mapbox.search:mapbox-search-android:1.0.0-rc.6")
+    implementation ("com.mapbox.search:mapbox-search-android-ui:1.0.0-rc.6")
 
 }
