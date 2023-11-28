@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="16dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginBottom="30dp"
+        >
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Bent u zeker dat u deze Polestar 2 wilt reserveren"
+            android:layout_marginTop="25dp"
+            android:textStyle="bold"
+            android:textAlignment="center"
+            />
+
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:layout_marginBottom="30dp"
+
+        >
+
+        <LinearLayout
+            android:layout_width="0dip"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            >
+            <ImageView
+                android:id="@+id/carModelImg"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginBottom="10dp"
+                />
+
+            <TextView
+                android:id="@+id/carModelText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                />
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="0dip"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            >
+            <ImageView
+                android:src="@drawable/battery"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginBottom="10dp"
+                />
+            <TextView
+                android:id="@+id/battery"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="60%"
+                android:textAlignment="center"
+                android:layout_marginBottom="2dp"
+                android:textColor="@color/gray"
+                />
+
+            <TextView
+                android:id="@+id/batteryRange"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="250km"
+                android:textAlignment="center"
+                />
+
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="0dip"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            >
+            <ImageView
+                android:src="@drawable/walking"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginBottom="10dp"
+                />
+
+            <TextView
+                android:id="@+id/walkingRange"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:layout_marginBottom="2dp"
+                android:textColor="@color/gray"
+                android:text="1.2km"
+                />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="10 min"
+                android:textAlignment="center"
+                />
+
+        </LinearLayout>
+    </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            >
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cancel_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_weight="1"
+                android:backgroundTint="@color/light_gray"
+                android:text="Annuleer"
+                android:textColor="@color/black"
+                app:cornerRadius="5dp" />
+
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/confirm_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/orange"
+                android:layout_weight="1"
+                app:cornerRadius="5dp"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:text="Ja, reserveer!"
+                android:textColor="@color/white"
+                />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

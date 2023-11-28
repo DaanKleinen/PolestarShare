@@ -388,6 +388,8 @@ class Navigation : AppCompatActivity() {
         setContentView(binding.root)
 
         val b = intent.extras
+        val CarLAT = b!!.getDouble("CarLAT")
+        val CarLON = b!!.getDouble("CarLON")
         val LAT = b!!.getDouble("LAT")
         val LON = b!!.getDouble("LON")
 
@@ -469,7 +471,7 @@ class Navigation : AppCompatActivity() {
         binding.mapView.getMapboxMap().loadStyleUri(NavigationStyles.NAVIGATION_DAY_STYLE) {
 // add long click listener that search for a route to the clicked destination
 //                findRoute(point)
-                findRoute(Point.fromLngLat(LON,LAT))
+                findRoute(Point.fromLngLat(CarLON,CarLAT), Point.fromLngLat(LON,LAT))
         }
 
         // initialize view interactions
@@ -533,7 +535,7 @@ class Navigation : AppCompatActivity() {
 
     }
 
-    private fun findRoute(destination: Point) {
+    private fun findRoute(carLocation : Point, destination: Point) {
         val originLocation = navigationLocationProvider.lastLocation
         val originPoint = originLocation?.let {
             Point.fromLngLat(it.longitude, it.latitude)
@@ -547,20 +549,9 @@ class Navigation : AppCompatActivity() {
         mapboxNavigation.requestRoutes(
             RouteOptions.builder()
                 .applyDefaultNavigationOptions()
-                .applyLanguageAndVoiceUnitOptions(this)
-                .coordinatesList(listOf(originPoint, destination))
+                .coordinatesList(listOf(originPoint, carLocation, destination))
                 // provide the bearing for the origin of the request to ensure
                 // that the returned route faces in the direction of the current user movement
-                .bearingsList(
-                    listOf(
-                        Bearing.builder()
-                            .angle(originLocation.bearing.toDouble())
-                            .degrees(45.0)
-                            .build(),
-                        null
-                    )
-                )
-                .layersList(listOf(mapboxNavigation.getZLevel(), null))
                 .build(),
             object : NavigationRouterCallback {
                 override fun onCanceled(routeOptions: RouteOptions, routerOrigin: RouterOrigin) {

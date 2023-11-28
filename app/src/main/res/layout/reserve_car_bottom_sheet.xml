@@ -151,22 +151,6 @@
                 app:iconGravity="textStart"
                 app:iconTint="@color/black" />
 
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/routeButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:backgroundTint="@color/light_gray"
-                android:layout_weight="1"
-                app:cornerRadius="5dp"
-                android:layout_marginLeft="10dp"
-                android:layout_marginRight="10dp"
-                android:text="plan uw reis"
-                android:textColor="@color/black"
-                app:icon="@drawable/route"
-                app:iconTint="@color/black"
-                app:iconGravity="textStart"
-                />
         </LinearLayout>
 
     </LinearLayout>
