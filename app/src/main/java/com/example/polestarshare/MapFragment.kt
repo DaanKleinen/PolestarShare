@@ -4,9 +4,11 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
+import android.content.Context.INPUT_METHOD_SERVICE
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.location.Location
@@ -17,7 +19,9 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -37,7 +41,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.mapbox.geojson.Point
-import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.Style
 import com.mapbox.maps.dsl.cameraOptions
@@ -53,17 +56,14 @@ import com.mapbox.search.SearchCallback
 import com.mapbox.search.SearchEngine
 import com.mapbox.search.SearchEngineSettings
 import com.mapbox.search.autocomplete.PlaceAutocomplete
-import com.mapbox.search.autofill.AddressAutofill
-import com.mapbox.search.autofill.AddressAutofillOptions
-import com.mapbox.search.autofill.AddressAutofillResult
-import com.mapbox.search.autofill.AddressAutofillSuggestion
-import com.mapbox.search.autofill.Query
+import com.mapbox.search.autocomplete.PlaceAutocompleteSuggestion
 import com.mapbox.search.common.AsyncOperationTask
 import com.mapbox.search.result.SearchResult
-import com.mapbox.search.ui.adapter.autofill.AddressAutofillUiAdapter
+import com.mapbox.search.ui.adapter.autocomplete.PlaceAutocompleteUiAdapter
 import com.mapbox.search.ui.view.CommonSearchViewConfiguration
-import com.mapbox.search.ui.view.DistanceUnitType
 import com.mapbox.search.ui.view.SearchResultsView
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 
 class MapFragment : Fragment() {
@@ -77,21 +77,28 @@ class MapFragment : Fragment() {
     val db = Firebase.firestore
 
 
-    private lateinit var addressAutofill: AddressAutofill
-
-    private lateinit var searchResultsView: SearchResultsView
-    private lateinit var addressAutofillUiAdapter: AddressAutofillUiAdapter
-
-    private lateinit var queryEditText: EditText
-
-    private var ignoreNextMapIdleEvent: Boolean = false
-    private var ignoreNextQueryTextUpdate: Boolean = false
-
     private lateinit var searchEngine: SearchEngine
     private lateinit var searchRequestTask: AsyncOperationTask
     private var reverseLocation: String = "Deelauto locatie"
     var SearchLAT: Double = 51.0
     var SearchLON: Double = 5.0
+
+
+
+
+    private lateinit var placeAutocompleteMap: PlaceAutocomplete
+    private lateinit var searchResultsViewMap: SearchResultsView
+    private lateinit var placeAutocompleteMapUiAdapter: PlaceAutocompleteUiAdapter
+    private lateinit var queryEditTextMap: EditText
+    private var ignoreNextQueryUpdateMap = false
+
+    private lateinit var placeAutocompleteRoute: PlaceAutocomplete
+    private lateinit var searchResultsViewRoute: SearchResultsView
+    private lateinit var placeAutocompleteRouteUiAdapter: PlaceAutocompleteUiAdapter
+    private lateinit var queryEditTextRoute: EditText
+    private var ignoreNextQueryUpdateRoute = false
+
+
 
     val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -125,6 +132,75 @@ class MapFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_map, container, false)
 
+        placeAutocompleteMap = PlaceAutocomplete.create(getString(R.string.mapbox_access_token))
+
+        queryEditTextMap = view.findViewById(R.id.query_text)
+
+
+        searchResultsViewMap = view.findViewById(R.id.search_results_view)
+
+        searchResultsViewMap.initialize(
+            SearchResultsView.Configuration(
+                commonConfiguration = CommonSearchViewConfiguration()
+            )
+        )
+
+        placeAutocompleteMapUiAdapter = PlaceAutocompleteUiAdapter(
+            view = searchResultsViewMap,
+            placeAutocomplete = placeAutocompleteMap
+        )
+
+        placeAutocompleteMapUiAdapter.addSearchListener(object : PlaceAutocompleteUiAdapter.SearchListener {
+
+            override fun onSuggestionsShown(suggestions: List<PlaceAutocompleteSuggestion>) {
+                // Nothing to do
+            }
+
+            override fun onSuggestionSelected(suggestion: PlaceAutocompleteSuggestion) {
+                mapView.camera.flyTo(cameraOptions {
+                    center(Point.fromLngLat(suggestion.coordinate.coordinates()[0].toDouble(), suggestion.coordinate.coordinates()[1].toDouble()))
+                    zoom(12.0)
+                })
+                searchResultsViewMap.isVisible = false
+                hideKeyBoard(view)
+            }
+
+            override fun onPopulateQueryClick(suggestion: PlaceAutocompleteSuggestion) {
+                queryEditTextMap.setText(suggestion.name)
+            }
+
+            override fun onError(e: Exception) {
+                // Nothing to do
+            }
+        })
+        val closeSearch = view.findViewById<ImageButton>(R.id.closeSearch)
+        closeSearch.setOnClickListener{
+            searchResultsViewMap.isVisible = false
+            queryEditTextMap.setText("")
+            hideKeyBoard(view)
+        }
+
+        queryEditTextMap.addTextChangedListener(object : TextWatcher {
+            override fun onTextChanged(text: CharSequence, start: Int, before: Int, count: Int) {
+                if (ignoreNextQueryUpdateMap) {
+                    ignoreNextQueryUpdateMap = false
+                } else {
+                    Log.d("tag", "search place update")
+                }
+
+                lifecycleScope.launchWhenStarted {
+                    placeAutocompleteMapUiAdapter.search(text.toString())
+                    searchResultsViewMap.isVisible = text.isNotEmpty()
+                }
+            }
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+                // Nothing to do
+            }
+
+            override fun afterTextChanged(s: Editable) {
+                // Nothing to do
+            }
+        })
 
 
         locationPermissionRequest.launch(
@@ -151,6 +227,7 @@ class MapFragment : Fragment() {
 
                     }
                     db.collection("Markers")
+                        .whereEqualTo("reserved", false)
                         .get()
                         .addOnSuccessListener { result ->
                             val context = context ?: return@addOnSuccessListener
@@ -163,6 +240,7 @@ class MapFragment : Fragment() {
                                         document.data.get("lon").toString().toDouble(),
                                         document.data.get("carModel").toString(),
                                         document.data.get("battery").toString(),
+                                        document.id,
                                     )
                                 }
                             }
@@ -235,7 +313,8 @@ class MapFragment : Fragment() {
         lat: Double,
         lon: Double,
         carModelNumber: String,
-        battery: String
+        battery: String,
+        userID: String
     ) {
         bitmapFromDrawableRes(
             requireContext(),
@@ -249,9 +328,10 @@ class MapFragment : Fragment() {
             pointAnnotationManager?.apply {
                 addClickListener(
                     OnPointAnnotationClickListener {
-
                         val dialog = BottomSheetDialog(requireContext())
                         val view = layoutInflater.inflate(R.layout.reserve_car_bottom_sheet, null)
+
+
 
                         val carModelText = view.findViewById<TextView>(R.id.carModelText)
                         val batteryText = view.findViewById<TextView>(R.id.battery)
@@ -270,6 +350,11 @@ class MapFragment : Fragment() {
                         val batteryRange = view.findViewById<TextView>(R.id.batteryRange)
                         val range: Double = 635 * (battery.toDouble() / 100)
                         batteryRange.text = "${range.toInt().toString()} km"
+
+                        val walking = view.findViewById<TextView>(R.id.walkingRange)
+                        walking.text = "${BigDecimal(distance(LAT, LON, lat, lon)).setScale(2, RoundingMode.HALF_UP)} km";
+                        val walkingTime = view.findViewById<TextView>(R.id.walkingTime)
+                        walkingTime.text = formattedTime(BigDecimal(distance(LAT, LON, lat, lon) / 5).setScale(2, RoundingMode.HALF_UP).toDouble())
                         openBottomsheet(dialog, view)
                         mapView.camera.flyTo(cameraOptions {
                             center(Point.fromLngLat(lon, lat))
@@ -305,6 +390,10 @@ class MapFragment : Fragment() {
                             confirmScreen.findViewById<TextView>(R.id.batteryRange)
                         batteryRangeConfirmation.text = "${range.toInt().toString()} km"
 
+                        val walkingConfirmation = confirmScreen.findViewById<TextView>(R.id.walkingRange)
+                        walkingConfirmation.text = "${BigDecimal(distance(LAT, LON, lat, lon)).setScale(2, RoundingMode.HALF_UP)} km";
+                        val walkingTimeConfirmation = confirmScreen.findViewById<TextView>(R.id.walkingTime)
+                        walkingTimeConfirmation.text = formattedTime(BigDecimal(distance(LAT, LON, lat, lon) / 5).setScale(2, RoundingMode.HALF_UP).toDouble())
                         val cancelButton =
                             confirmScreen.findViewById<MaterialButton>(R.id.cancel_button)
                         cancelButton.setOnClickListener {
@@ -344,90 +433,88 @@ class MapFragment : Fragment() {
                             dialog.dismiss()
                         }
 
+                        placeAutocompleteRoute = PlaceAutocomplete.create(getString(R.string.mapbox_access_token))
+
+                        queryEditTextRoute = searchScreen.findViewById(R.id.query_text)
+
+
+                        searchResultsViewRoute = searchScreen.findViewById(R.id.search_results_view)
+
+                        searchResultsViewRoute.initialize(
+                            SearchResultsView.Configuration(
+                                commonConfiguration = CommonSearchViewConfiguration()
+                            )
+                        )
+
+                        placeAutocompleteRouteUiAdapter = PlaceAutocompleteUiAdapter(
+                            view = searchResultsViewRoute,
+                            placeAutocomplete = placeAutocompleteRoute
+                        )
+
+                        placeAutocompleteRouteUiAdapter.addSearchListener(object : PlaceAutocompleteUiAdapter.SearchListener {
+
+                            override fun onSuggestionsShown(suggestions: List<PlaceAutocompleteSuggestion>) {
+                                // Nothing to do
+                            }
+
+                            @SuppressLint("ResourceType")
+                            override fun onSuggestionSelected(suggestion: PlaceAutocompleteSuggestion) {
+
+                                mapView.camera.flyTo(cameraOptions {
+                                    center(Point.fromLngLat(suggestion.coordinate.coordinates()[0].toDouble(), suggestion.coordinate.coordinates()[1].toDouble()))
+                                    zoom(12.0)
+                                })
+                                SearchLAT = suggestion.coordinate.coordinates()[1].toDouble()
+                                SearchLON = suggestion.coordinate.coordinates()[0].toDouble()
+                                startRoute.isEnabled = true
+                                startRoute.setBackgroundColor(Color.parseColor(getString(R.color.orange)));
+                                searchResultsViewRoute.isVisible = false
+                                hideKeyBoard(searchScreen)
+
+                            }
+                            override fun onPopulateQueryClick(suggestion: PlaceAutocompleteSuggestion) {
+                                queryEditTextRoute.setText(suggestion.name)
+                            }
+
+
+                            override fun onError(e: Exception) {
+                                // Nothing to do
+                            }
+                        })
+
+                        queryEditTextRoute.addTextChangedListener(object : TextWatcher {
+
+                            override fun onTextChanged(text: CharSequence, start: Int, before: Int, count: Int) {
+                                if (ignoreNextQueryUpdateRoute) {
+                                    ignoreNextQueryUpdateRoute = false
+                                } else {
+                                    Log.d("tag", "search place update")
+                                }
+
+                                lifecycleScope.launchWhenStarted {
+                                    placeAutocompleteRouteUiAdapter.search(text.toString())
+                                    searchResultsViewRoute.isVisible = text.isNotEmpty()
+                                }
+                            }
+                            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+                                // Nothing to do
+                            }
+
+                            override fun afterTextChanged(s: Editable) {
+                                // Nothing to do
+                            }
+                        })
+
 
                         val confirmButton =
                             confirmScreen.findViewById<MaterialButton>(R.id.confirm_button)
                         confirmButton.setOnClickListener {
                             autoLocatie.setText(reverseLocation);
                             changeBottomSheet(dialog, searchScreen)
+
+                            db.collection("Markers").document(userID).update("reserved", true)
+
                         }
-
-
-
-
-                        addressAutofill =
-                            AddressAutofill.create(getString(R.string.mapbox_access_token))
-
-                        queryEditText = searchScreen.findViewById(R.id.query_text)
-
-                        searchResultsView = searchScreen.findViewById(R.id.search_results_view)
-
-                        searchResultsView.initialize(
-                            SearchResultsView.Configuration(
-                                commonConfiguration = CommonSearchViewConfiguration(DistanceUnitType.METRIC)
-                            )
-                        )
-
-                        addressAutofillUiAdapter = AddressAutofillUiAdapter(
-                            view = searchResultsView,
-                            addressAutofill = addressAutofill
-                        )
-
-                        addressAutofillUiAdapter.addSearchListener(object :
-                            AddressAutofillUiAdapter.SearchListener {
-
-                            override fun onSuggestionSelected(suggestion: AddressAutofillSuggestion) {
-                                selectSuggestion(
-                                    suggestion,
-                                    fromReverseGeocoding = false,
-                                )
-                            }
-
-                            override fun onSuggestionsShown(suggestions: List<AddressAutofillSuggestion>) {
-// Nothing to do
-                            }
-
-                            override fun onError(e: Exception) {
-// Nothing to do
-                            }
-                        })
-
-                        queryEditText.addTextChangedListener(object : TextWatcher {
-
-                            override fun onTextChanged(
-                                text: CharSequence,
-                                start: Int,
-                                before: Int,
-                                count: Int
-                            ) {
-                                if (ignoreNextQueryTextUpdate) {
-                                    ignoreNextQueryTextUpdate = false
-                                    return
-                                }
-
-                                val query = Query.create(text.toString())
-                                if (query != null) {
-                                    lifecycleScope.launchWhenStarted {
-                                        addressAutofillUiAdapter.search(query)
-                                    }
-                                }
-                                searchResultsView.isVisible = query != null
-                            }
-
-                            override fun beforeTextChanged(
-                                s: CharSequence,
-                                start: Int,
-                                count: Int,
-                                after: Int
-                            ) {
-// Nothing to do
-                            }
-
-                            override fun afterTextChanged(s: Editable) {
-// Nothing to do
-                            }
-                        })
-
 
                         val priceScreen =
                             layoutInflater.inflate(R.layout.reserve_car_price_bottom_sheet, null)
@@ -449,6 +536,39 @@ class MapFragment : Fragment() {
             pointAnnotationManager?.create(pointAnnotationOptions)
 
         }
+    }
+
+    private fun distance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val theta = lon1 - lon2
+        var dist = (Math.sin(deg2rad(lat1))
+                * Math.sin(deg2rad(lat2))
+                + (Math.cos(deg2rad(lat1))
+                * Math.cos(deg2rad(lat2))
+                * Math.cos(deg2rad(theta))))
+        dist = Math.acos(dist)
+        dist = rad2deg(dist)
+        dist = dist * 60 * 1.1515 * 1.609344
+        return dist
+    }
+
+    private fun deg2rad(deg: Double): Double {
+        return deg * Math.PI / 180.0
+    }
+
+    private fun rad2deg(rad: Double): Double {
+        return rad * 180.0 / Math.PI
+    }
+
+    private fun formattedTime(totalhours: Double) : String {
+        val wholeHours = totalhours.toInt()
+        val remainingMinutes = ((totalhours - wholeHours) * 60).toInt()
+
+        val formattedTime = if (wholeHours > 0) {
+            "$wholeHours uur ${if (remainingMinutes > 0) "$remainingMinutes min" else ""}"
+        } else {
+            "$remainingMinutes min"
+        }
+        return formattedTime
     }
 
 
@@ -508,71 +628,6 @@ class MapFragment : Fragment() {
         }
     }
 
-    private fun findAddress(point: Point) {
-        lifecycleScope.launchWhenStarted {
-            val response = addressAutofill.suggestions(point, AddressAutofillOptions())
-            response.onValue { suggestions ->
-                if (suggestions.isEmpty()) {
-                    Log.d("TAG", "address_autofill_error_pin_correction")
-                } else {
-                    selectSuggestion(
-                        suggestions.first(),
-                        fromReverseGeocoding = true
-                    )
-                }
-            }.onError {
-                Log.d("TAG", "address_autofill_error_pin_correction")
-            }
-        }
-    }
-
-    private fun selectSuggestion(
-        suggestion: AddressAutofillSuggestion,
-        fromReverseGeocoding: Boolean
-    ) {
-        lifecycleScope.launchWhenStarted {
-            val response = addressAutofill.select(suggestion)
-            response.onValue { result ->
-                showAddressAutofillResult(result, fromReverseGeocoding)
-            }.onError {
-                Log.d("TAG", "address_autofill_error_select")
-            }
-        }
-    }
-
-    private fun showAddressAutofillResult(
-        result: AddressAutofillResult,
-        fromReverseGeocoding: Boolean
-    ) {
-        val address = result.address
-
-        if (!fromReverseGeocoding) {
-            mapView.getMapboxMap().setCamera(
-                CameraOptions.Builder()
-                    .center(result.suggestion.coordinate)
-                    .zoom(16.0)
-                    .build()
-            )
-
-//            val b = Bundle()
-            SearchLAT = result.suggestion.coordinate.coordinates()[1].toDouble()
-            SearchLON = result.suggestion.coordinate.coordinates()[0].toDouble()
-//            RouteIntent.putExtras(b);
-
-            ignoreNextMapIdleEvent = true
-        }
-
-        ignoreNextQueryTextUpdate = true
-        queryEditText.setText(
-            listOfNotNull(
-                address.houseNumber,
-                address.street
-            ).joinToString()
-        )
-        queryEditText.clearFocus()
-
-        searchResultsView.isVisible = false
-    }
 
     private val searchCallback = object : SearchCallback {
 
@@ -609,6 +664,18 @@ class MapFragment : Fragment() {
 
         override fun onError(e: Exception) {
             Log.i("SearchApiExample", "Reverse geocoding error", e)
+        }
+    }
+
+    private fun hideKeyBoard(it: View){
+        try{
+            val imm = requireActivity().getSystemService(
+                INPUT_METHOD_SERVICE
+            ) as InputMethodManager
+
+            imm.hideSoftInputFromWindow(it.windowToken, 0)
+        }catch (e:Exception){
+            e.printStackTrace()
         }
     }
 

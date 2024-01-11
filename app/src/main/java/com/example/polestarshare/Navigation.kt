@@ -7,23 +7,22 @@ import android.content.res.Resources
 import android.location.Location
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.example.polestarshare.databinding.ActivityNavigationBinding
-import com.mapbox.api.directions.v5.models.Bearing
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.geojson.Point
 import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.animation.camera
-import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.navigation.base.ExperimentalPreviewMapboxNavigationAPI
 import com.mapbox.navigation.base.TimeFormat
 import com.mapbox.navigation.base.extensions.applyDefaultNavigationOptions
-import com.mapbox.navigation.base.extensions.applyLanguageAndVoiceUnitOptions
 import com.mapbox.navigation.base.formatter.DistanceFormatterOptions
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.base.route.NavigationRoute
@@ -66,7 +65,6 @@ import com.mapbox.navigation.ui.tripprogress.model.TimeRemainingFormatter
 import com.mapbox.navigation.ui.tripprogress.model.TripProgressUpdateFormatter
 import com.mapbox.navigation.ui.tripprogress.view.MapboxTripProgressView
 import com.mapbox.navigation.ui.voice.api.MapboxVoiceInstructionsPlayer
-import kotlinx.coroutines.delay
 import java.util.Date
 
 
@@ -283,10 +281,33 @@ class Navigation : AppCompatActivity() {
     /**
      * Gets notified with progress along the currently active route.
      */
+
+    private var dialogshown = false
+
     private val routeProgressObserver = RouteProgressObserver { routeProgress ->
         // update the camera position to account for the progressed fragment of the route
         viewportDataSource.onRouteProgressChanged(routeProgress)
         viewportDataSource.evaluate()
+        Log.d("distance to go:", (routeProgress.distanceTraveled / routeProgress.route.distance()).toString())
+
+//        (routeProgress.distanceTraveled / routeProgress.route.distance()) < 0.75 &&
+        if (((routeProgress.distanceTraveled > 100) || routeProgress.distanceRemaining < 2000) && dialogshown === false){
+            val dialog = BottomSheetDialog(this)
+            val view = layoutInflater.inflate(R.layout.rerouting_modal, null)
+
+            Toast.makeText(
+                this@Navigation,
+               routeProgress.distanceTraveled.toString(),
+                Toast.LENGTH_SHORT
+            ).show()
+
+            dialogshown = true
+            dialog.setCancelable(true)
+            dialog.setContentView(view)
+            dialog.show()
+
+
+        }
 
         // draw the upcoming maneuver arrow on the map
         val style = binding.mapView.getMapboxMap().getStyle()

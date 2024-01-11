@@ -13,8 +13,8 @@ android {
         applicationId = "com.daank.polestarshare"
         minSdk = 29
         targetSdk = 33
-        versionCode = 7
-        versionName = "1.06"
+        versionCode = 12
+        versionName = "1.12"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

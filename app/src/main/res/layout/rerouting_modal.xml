@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="16dp"
+
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+   <LinearLayout
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:paddingTop="24dp"
+       android:paddingBottom="30dp"
+       android:orientation="vertical">
+
+       <LinearLayout
+           android:layout_width="match_parent"
+           android:layout_height="wrap_content"
+           android:orientation="horizontal"
+           android:layout_marginHorizontal="16dp"
+           android:paddingBottom="32dp"
+           android:weightSum="1"
+           >
+           <ImageView
+               android:layout_weight="0.2"
+               android:layout_width="0dp"
+               android:layout_height="wrap_content"
+               android:src="@drawable/frame"
+               />
+           <LinearLayout
+               android:layout_weight="0.8"
+               android:layout_width="0dp"
+               android:layout_height="wrap_content"
+               android:orientation="vertical">
+               <TextView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:text="Laadpaal in de buurt, laadt de auto op!"
+                   />
+
+               <TextView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:text="Fijn voor de volgende gebruiker!"
+                   />
+
+               <TextView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:text="100m"
+                   />
+
+           </LinearLayout>
+
+       </LinearLayout>
+
+       <LinearLayout
+           android:layout_width="match_parent"
+           android:layout_height="wrap_content"
+           android:orientation="horizontal"
+           android:layout_weight="1"
+           >
+
+           <com.google.android.material.button.MaterialButton
+               android:id="@+id/cancel_button"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:layout_marginLeft="10dp"
+               android:layout_marginRight="10dp"
+               android:layout_weight="1"
+               android:backgroundTint="@color/light_gray"
+               android:text="Annuleer"
+               android:textColor="@color/black"
+               app:cornerRadius="5dp" />
+
+
+           <com.google.android.material.button.MaterialButton
+               android:id="@+id/confirm_button"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:backgroundTint="@color/orange"
+               android:layout_weight="1"
+               app:cornerRadius="5dp"
+               android:layout_marginLeft="10dp"
+               android:layout_marginRight="10dp"
+               android:text="Navigeer"
+               android:textColor="@color/white"
+               />
+       </LinearLayout>
+
+   </LinearLayout>
+
+</androidx.cardview.widget.CardView>
